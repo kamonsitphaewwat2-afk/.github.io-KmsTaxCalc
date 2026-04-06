@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KmsTaxCalc - ระบบคำนวณภาษีโดย กมลสิทธิ์</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #0f3057; 
+            --accent: #00587a; 
+            --white-glass: rgba(255, 255, 255, 0.95); 
+        }
+        body {
+            font-family: 'Sarabun', sans-serif;
+            /* พื้นหลังแนว IT พร้อม Overlay สีเข้มเพื่อให้สบายตา */
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                        url('https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover; 
+            background-attachment: fixed; 
+            margin: 0; 
+            min-height: 100vh;
+        }
+        .header { padding: 40px 20px; text-align: center; color: white; }
+        .container { max-width: 1000px; margin: 0 auto 50px; padding: 0 20px; }
+        
+        /* ระบบสลับหน้า */
+        .page { display: none; animation: fadeIn 0.3s ease; }
+        .active-page { display: block !important; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* การ์ดเมนูหลัก */
+        .grid-menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 20px; }
+        .tax-card, .calc-card {
+            background: var(--white-glass); border-radius: 20px; padding: 30px;
+            text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.4); backdrop-filter: blur(10px);
+        }
+        .tax-card img { width: 60px; margin-bottom: 15px; }
+
+        /* ส่วนฟอร์มและปุ่ม */
+        .input-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--primary); }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 10px; font-size: 1rem; box-sizing: border-box; }
+        .btn { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; transition: 0.2s; }
+        .btn:hover { background: var(--primary); transform: translateY(-2px); }
+        .btn-back { background: #555; width: auto; margin-bottom: 15px; padding: 8px 20px; font-size: 0.9rem; }
+
+        /* ส่วนแสดงผลลัพธ์ */
+        .result-box { margin-top: 20px; padding: 25px; background: #f0f7ff; border-radius: 15px; border-left: 6px solid var(--accent); display: none; text-align: left; }
+        .tax-amount { color: #d63031; font-size: 2.2rem; font-weight: bold; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>KmsTaxCalc</h1>
+        <p>ระบบคำนวณภาษีครบวงจร โดย กมลสิทธิ์ แผ้ววัด</p>
+    </div>
+
+    <div class="container">
+        
+        <div id="home-page" class="page active-page">
+            <div class="grid-menu">
+                <div class="tax-card">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2454/2454282.png">
+                    <h3>ภาษีเงินได้บุคคล</h3>
+                    <p>เงินเดือน, โบนัส, ลดหย่อน</p>
+                    <button class="btn" onclick="showPage('personal-page')">เริ่มคำนวณ</button>
+                </div>
+                <div class="tax-card">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2652/2652218.png">
+                    <h3>ภาษีธุรกิจ & VAT 7%</h3>
+                    <p>รวม VAT / แยก VAT</p>
+                    <button class="btn" onclick="showPage('vat-page')">เริ่มคำนวณ</button>
+                </div>
+                <div class="tax-card">
+                    <img src="https://cdn-icons-png.flaticon.com/512/602/602253.png">
+                    <h3>ภาษีที่ดิน</h3>
+                    <p>บ้าน, เกษตร, พาณิชย์</p>
+                    <button class="btn" onclick="showPage('land-page')">เริ่มคำนวณ</button>
+                </div>
+                <div class="tax-card">
+                    <img src="https://cdn-icons-png.flaticon.com/512/1570/1570917.png">
+                    <h3>หัก ณ ที่จ่าย</h3>
+                    <p>จ้างงาน, บริการ, ขนส่ง</p>
+                    <button class="btn" onclick="showPage('wh-page')">เริ่มคำนวณ</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="personal-page" class="page">
+            <button class="btn btn-back" onclick="showPage('home-page')">← กลับหน้าหลัก</button>
+            <div class="calc-card">
+                <h2>คำนวณภาษีเงินได้บุคคลธรรมดา</h2>
+                <div class="input-group"><label>เงินเดือน (บาท):</label><input type="number" id="p-salary" placeholder="0"></div>
+                <div class="input-group"><label>โบนัส (บาท):</label><input type="number" id="p-bonus" value="0"></div>
+                <div class="input-group"><label>ค่าลดหย่อนอื่นๆ (บาท):</label><input type="number" id="p-extra" value="0"></div>
+                <button class="btn" onclick="doCalcPersonal()">คำนวณภาษี</button>
+                <div id="res-p" class="result-box">
+                    <p>สรุปผลสำหรับคุณ <b>กมลสิทธิ์</b></p>
+                    <div class="tax-amount">ภาษีที่ต้องจ่าย: <span id="v-p-tax">0</span> บาท</div>
+                    <p style="color:#666; font-size:0.9rem;">*เป็นการคำนวณเบื้องต้นโดยหักค่าใช้จ่ายและค่าลดหย่อนพื้นฐาน</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="vat-page" class="page">
+            <button class="btn btn-back" onclick="showPage('home-page')">← กลับหน้าหลัก</button>
+            <div class="calc-card">
+                <h2>คำนวณภาษีมูลค่าเพิ่ม (VAT 7%)</h2>
+                <div class="input-group"><label>ราคาสินค้า/บริการ (บาท):</label><input type="number" id="v-price" placeholder="0"></div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn" onclick="doCalcVat(true)" style="background:#28a745;">ยังไม่รวม VAT</button>
+                    <button class="btn" onclick="doCalcVat(false)" style="background:#ffc107; color:black;">รวม VAT แล้ว</button>
+                </div>
+                <div id="res-v" class="result-box">
+                    <div class="tax-amount">VAT 7%: <span id="v-v-tax">0</span> บาท</div>
+                    <p id="v-v-desc"></p>
+                </div>
+            </div>
+        </div>
+
+        <div id="land-page" class="page">
+            <button class="btn btn-back" onclick="showPage('home-page')">← กลับหน้าหลัก</button>
+            <div class="calc-card">
+                <h2>คำนวณภาษีที่ดินและสิ่งปลูกสร้าง</h2>
+                <div class="input-group"><label>ราคาประเมินทรัพย์สิน (บาท):</label><input type="number" id="l-val" placeholder="0"></div>
+                <div class="input-group">
+                    <label>ประเภทการใช้ประโยชน์:</label>
+                    <select id="l-type">
+                        <option value="0.0001">เกษตรกรรม (0.01%)</option>
+                        <option value="0.0002">ที่อยู่อาศัย (0.02%)</option>
+                        <option value="0.003">พาณิชย์/อื่นๆ (0.3%)</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="doCalcLand()">คำนวณค่าภาษี</button>
+                <div id="res-l" class="result-box">
+                    <div class="tax-amount">ค่าภาษีที่ดิน: <span id="v-l-tax">0</span> บาท</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="wh-page" class="page">
+            <button class="btn btn-back" onclick="showPage('home-page')">← กลับหน้าหลัก</button>
+            <div class="calc-card">
+                <h2>คำนวณภาษีหัก ณ ที่จ่าย</h2>
+                <div class="input-group"><label>ยอดเงินจ้างงาน (บาท):</label><input type="number" id="w-amt" placeholder="0"></div>
+                <div class="input-group">
+                    <label>ประเภทการจ่ายเงิน:</label>
+                    <select id="w-rate">
+                        <option value="0.01">ค่าขนส่ง (1%)</option>
+                        <option value="0.02">ค่าโฆษณา (2%)</option>
+                        <option value="0.03" selected>ค่าจ้าง/บริการ (3%)</option>
+                        <option value="0.05">ค่าเช่า (5%)</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="doCalcWh()">คำนวณยอดเงิน</button>
+                <div id="res-w" class="result-box">
+                    <div class="tax-amount">ถูกหักภาษีไว้: <span id="v-w-tax">0</span> บาท</div>
+                    <p style="font-weight:bold; color:#28a745; font-size:1.2rem; margin-top:10px;">
+                        ยอดที่ได้รับจริง: <span id="v-w-net">0</span> บาท
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ฟังก์ชันสลับหน้า
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+            document.getElementById(id).classList.add('active-page');
+            window.scrollTo(0,0);
+        }
+
+        // 1. คำนวณภาษีบุคคล
+        function doCalcPersonal() {
+            let s = parseFloat(document.getElementById('p-salary').value) || 0;
+            let b = parseFloat(document.getElementById('p-bonus').value) || 0;
+            let e = parseFloat(document.getElementById('p-extra').value) || 0;
+            let income = (s * 12) + b;
+            let net = Math.max(income - 160000 - e, 0); 
+            let tax = net > 150000 ? (net - 150000) * 0.05 : 0;
+            document.getElementById('res-p').style.display = 'block';
+            document.getElementById('v-p-tax').innerText = tax.toLocaleString();
+        }
+
+        // 2. คำนวณ VAT
+        function doCalcVat(isEx) {
+            let p = parseFloat(document.getElementById('v-price').value) || 0;
+            let v = isEx ? p * 0.07 : p - (p / 1.07);
+            document.getElementById('res-v').style.display = 'block';
+            document.getElementById('v-v-tax').innerText = v.toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('v-v-desc').innerText = isEx ? "ภาษีบวกเพิ่มจากราคาสินค้า" : "ภาษีที่รวมอยู่ในราคาสินค้าแล้ว";
+        }
+
+        // 3. คำนวณที่ดิน
+        function doCalcLand() {
+            let v = parseFloat(document.getElementById('l-val').value) || 0;
+            let r = parseFloat(document.getElementById('l-type').value);
+            document.getElementById('res-l').style.display = 'block';
+            document.getElementById('v-l-tax').innerText = (v * r).toLocaleString(undefined, {minimumFractionDigits: 2});
+        }
+
+        // 4. คำนวณหัก ณ ที่จ่าย
+        function doCalcWh() {
+            let a = parseFloat(document.getElementById('w-amt').value) || 0;
+            let r = parseFloat(document.getElementById('w-rate').value);
+            let tax = a * r;
+            let net = a - tax;
+            document.getElementById('res-w').style.display = 'block';
+            document.getElementById('v-w-tax').innerText = tax.toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('v-w-net').innerText = net.toLocaleString(undefined, {minimumFractionDigits: 2});
+        }
+    </script>
+</body>
+</html>
